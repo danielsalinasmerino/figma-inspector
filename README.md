@@ -1,40 +1,167 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+# Figma Inspector
 
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
+A Figma plugin designed for learning and teaching Figma plugin development. This project serves as a practical example for workshops, demonstrating core concepts and best practices for building Figma plugins with TypeScript.
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+## What is Figma Inspector?
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+Figma Inspector is an educational plugin that helps developers understand how to interact with the Figma API. It demonstrates key plugin development concepts including:
 
-  https://nodejs.org/en/download/
+- Node inspection and traversal
+- Plugin UI creation
+- Communication between plugin code and UI
+- TypeScript integration in Figma plugins
+- Working with the Figma Plugin API
 
-Next, install TypeScript using the command:
+This plugin is specifically designed as a teaching tool for workshops and can be used as a starting point for building your own Figma plugins.
 
-  npm install -g typescript
+## Prerequisites
 
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
+Before you begin, ensure you have the following installed:
 
-  npm install --save-dev @figma/plugin-typings
+- **Node.js** (v14 or higher) - [Download here](https://nodejs.org/en/download/)
+- **npm** (comes with Node.js)
+- **TypeScript** - Install globally with `npm install -g typescript`
+- **Code Editor** - We recommend [Visual Studio Code](https://code.visualstudio.com/)
 
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
+## Getting Started
 
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
+### Installation
 
-For more information, visit https://www.typescriptlang.org/
+1. Clone this repository:
 
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
+   ```bash
+   git clone https://github.com/danielsalinasmerino/figma-inspector.git
+   cd figma-inspector
+   ```
 
-We recommend writing TypeScript code using Visual Studio code:
+2. Install dependencies:
 
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
+   ```bash
+   npm install
+   ```
 
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+3. Install Figma plugin type definitions:
+   ```bash
+   npm install --save-dev @figma/plugin-typings
+   ```
+
+### Development Setup
+
+#### Using Visual Studio Code (Recommended)
+
+1. Open the project folder in VS Code
+2. Run the build task:
+   - Press `Cmd+Shift+B` (Mac) or `Ctrl+Shift+B` (Windows/Linux)
+   - Select **"npm: watch"** from the list
+   - This will compile TypeScript to JavaScript automatically on every save
+
+#### Manual Compilation
+
+If you prefer not to use VS Code, compile TypeScript manually:
+
+```bash
+npm run build
+```
+
+For watch mode:
+
+```bash
+npm run watch
+```
+
+### Loading the Plugin in Figma
+
+1. Open Figma Desktop App
+2. Go to **Plugins** → **Development** → **Import plugin from manifest...**
+3. Select the `manifest.json` file from your project folder
+4. The plugin will now appear in your Plugins menu
+
+## Project Structure
+
+```
+figma-inspector/
+├── manifest.json      # Plugin configuration and metadata
+├── code.ts           # Main plugin logic (backend)
+├── ui.html           # Plugin user interface
+├── package.json      # Node.js dependencies and scripts
+├── tsconfig.json     # TypeScript configuration
+└── README.md         # This file
+```
+
+## Understanding the Code
+
+### Plugin Backend (`code.ts`)
+
+This file contains the main plugin logic that runs in the Figma plugin sandbox. It has access to the Figma document and API but cannot access browser APIs directly.
+
+Key concepts demonstrated:
+
+- Accessing the current selection
+- Reading node properties
+- Sending messages to the UI
+
+### Plugin UI (`ui.html`)
+
+The user interface runs in an iframe and has access to browser APIs but not the Figma document directly. Communication between the UI and the plugin code happens through message passing.
+
+## Workshop Learning Path
+
+If you're using this plugin for learning, here's a suggested path through the code:
+
+1. **Start with `manifest.json`** - Understand plugin configuration
+2. **Explore `code.ts`** - See how to interact with Figma's API
+3. **Review `ui.html`** - Learn about plugin UI and messaging
+4. **Experiment** - Modify the code and see what happens!
+
+## Development Tips
+
+- **Hot Reload**: The watch task automatically recompiles on file changes, but you'll need to close and reopen the plugin in Figma to see updates
+- **Console Logging**: Use `console.log()` in `code.ts` - logs appear in Figma's plugin console (Plugins → Development → Open Console)
+- **Debugging UI**: Right-click in the plugin UI and select "Inspect Element" to open browser DevTools
+- **Type Definitions**: TypeScript will provide autocomplete for Figma API - explore what's available!
+
+## Common Issues
+
+**Plugin doesn't load**
+
+- Ensure `manifest.json` is valid JSON
+- Check that the `main` field in manifest points to the correct compiled JavaScript file
+
+**TypeScript errors**
+
+- Make sure `@figma/plugin-typings` is installed
+- Check your `tsconfig.json` configuration
+
+**Changes not reflecting**
+
+- Close and reopen the plugin in Figma after recompiling
+- Clear the plugin cache: Plugins → Development → Clear cache and restart
+
+## Resources
+
+- [Figma Plugin Documentation](https://www.figma.com/plugin-docs/)
+- [Figma Plugin API Reference](https://www.figma.com/plugin-docs/api/api-reference/)
+- [TypeScript Documentation](https://www.typescriptlang.org/)
+- [Figma Community Plugins](https://www.figma.com/community/plugins) - Get inspired!
+
+## Workshop Materials
+
+This plugin is designed to be used in workshops teaching Figma plugin development. Feel free to fork this repository and modify it for your own learning or teaching purposes.
+
+## Next Steps
+
+After understanding this basic plugin structure, you can:
+
+- Add more complex UI interactions
+- Implement different node inspection features
+- Create reusable components
+- Add plugin storage capabilities
+- Publish to the Figma Community
+
+## Questions or Issues?
+
+If you encounter any problems or have questions about plugin development, check the [Figma Plugin Documentation](https://www.figma.com/plugin-docs/) or the [Figma Community Forum](https://forum.figma.com/).
+
+---
+
+Built with ❤️ for learning Figma plugin development
