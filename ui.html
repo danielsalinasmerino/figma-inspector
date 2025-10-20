@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Figma Inspector</title>
+  <style>
+    /* Main container styling */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 16px;
+      background-color: #ffffff;
+      font-size: 14px;
+    }
+
+    /* Header styling */
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      color: #555;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    /* Info grid layout */
+    .info-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* Individual info items */
+    .info-item {
+      padding: 8px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      font-size: 14px;
+      border-left: 3px solid #0066cc;
+    }
+
+    /* CSS properties section */
+    .css-properties {
+      margin-top: 16px;
+      padding: 12px;
+      background: #e8f4fd;
+      border-radius: 6px;
+      border: 1px solid #0066cc;
+      display: none; /* Hidden by default */
+    }
+
+    .css-properties h4 {
+      margin: 0 0 8px 0;
+      color: #0066cc;
+      font-size: 16px;
+    }
+
+    /* CSS code block styling */
+    .css-code {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: auto;
+      white-space: pre;
+      margin: 8px 0;
+      border: 1px solid #333;
+    }
+
+    .copy-button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .copy-button:hover {
+      background: #218838;
+    }
+
+    .copy-button.copied {
+      background: #6c757d;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin: 8px 4px 8px 0;
+      border: none;
+      border-radius: 4px;
+      background: #0066cc;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #0052a3;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Selection display */
+    #selection {
+      font-style: italic;
+      color: #666;
+    }
+
+    /* No selection message */
+    #selection-info p {
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Figma Inspector 👀</h1>
+  
+  <div id="selection-info">
+      <p>No element selected</p>
+  </div>
+
+  <!-- Buttons for user interaction -->
+  <div id="controls" style="display: none;">
+    <button id="show-css-btn" onclick="toggleCSSProperties()">Show CSS Properties</button>
+    <button onclick="sendMessage()">Send Message</button>
+  </div>
+
+  <script>
+    let currentElementData = null;
+    let cssPropertiesVisible = false;
+
+    // Function to generate CSS code string
+    function generateCSSCode(css) {
+      const fontFamily = typeof css.fontName === 'object' ? css.fontName.family : css.fontName;
+      const fontSize = typeof css.fontSize === 'number' ? css.fontSize : css.fontSize;
+      const letterSpacing = typeof css.letterSpacing === 'object' ? 
+        `${css.letterSpacing.value}${css.letterSpacing.unit}` : 
+        css.letterSpacing === 0 ? 'normal' : `${css.letterSpacing}px`;
+      
+      const lineHeight = typeof css.lineHeight === 'object' ? 
+        css.lineHeight.unit === 'PIXELS' ? `${css.lineHeight.value}px` : 
+        css.lineHeight.unit === 'PERCENT' ? `${css.lineHeight.value / 100}` :
+        `${css.lineHeight.value}` : 
+        css.lineHeight === 'AUTO' ? 'normal' : css.lineHeight;
+
+      // Get text color from fills
+      let color = '#000000';
+      if (css.fills && Array.isArray(css.fills) && css.fills.length > 0) {
+        const fill = css.fills[0];
+        if (fill.type === 'SOLID' && fill.color) {
+          const r = Math.round(fill.color.r * 255);
+          const g = Math.round(fill.color.g * 255);
+          const b = Math.round(fill.color.b * 255);
+          color = `rgb(${r}, ${g}, ${b})`;
+        }
+      }
+
+      return `.text-element {
+  font-family: "${fontFamily}";
+  font-size: ${fontSize}px;
+  font-weight: ${css.fontWeight};
+  letter-spacing: ${letterSpacing};
+  line-height: ${lineHeight};
+  text-align: ${css.textAlignHorizontal.toLowerCase()};
+  text-decoration: ${css.textDecoration.toLowerCase()};
+  text-transform: ${css.textCase === 'ORIGINAL' ? 'none' : css.textCase.toLowerCase()};
+  color: ${color};
+  opacity: ${css.opacity};
+  mix-blend-mode: ${css.blendMode.toLowerCase().replace('_', '-')};
+}`;
+    }
+
+    // Function to copy text to clipboard
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const button = document.getElementById('copy-css-btn');
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      });
+    }
+
+    // Template function for cleaner HTML generation
+    function createElementTemplate(data) {
+      let html = `
+        <h3>Element Details</h3>
+        <div class="info-grid">
+          <div class="info-item"><strong>Name:</strong> ${data.name}</div>
+          <div class="info-item"><strong>Type:</strong> ${data.type}</div>
+          <div class="info-item"><strong>ID:</strong> ${data.id}</div>
+          ${data.characters ? `<div class="info-item"><strong>Text:</strong> "${data.characters}"</div>` : ''}
+        </div>
+      `;
+
+      // Add CSS properties section (initially hidden)
+      if (data.type === "TEXT" && data.cssProperties) {
+        const css = data.cssProperties;
+        const cssCode = generateCSSCode(css);
+        
+        html += `
+          <div class="css-properties" id="css-properties">
+            <h4>CSS Properties</h4>
+            <div class="css-code" id="css-code-block">${cssCode}</div>
+            <button class="copy-button" id="copy-css-btn" onclick="copyToClipboard(document.getElementById('css-code-block').textContent)">
+              📋 Copy CSS
+            </button>
+            
+            <details style="margin-top: 12px;">
+              <summary style="cursor: pointer; color: #0066cc; font-weight: bold;">Show Detailed Properties</summary>
+              <div class="info-grid" style="margin-top: 8px;">
+                <div class="info-item"><strong>Font Size:</strong> ${css.fontSize}px</div>
+                <div class="info-item"><strong>Font Family:</strong> ${typeof css.fontName === 'object' ? css.fontName.family : css.fontName}</div>
+                <div class="info-item"><strong>Font Weight:</strong> ${css.fontWeight}</div>
+                <div class="info-item"><strong>Letter Spacing:</strong> ${typeof css.letterSpacing === 'object' ? css.letterSpacing.value + css.letterSpacing.unit : css.letterSpacing}</div>
+                <div class="info-item"><strong>Line Height:</strong> ${typeof css.lineHeight === 'object' ? css.lineHeight.value + css.lineHeight.unit : css.lineHeight}</div>
+                <div class="info-item"><strong>Text Align H:</strong> ${css.textAlignHorizontal}</div>
+                <div class="info-item"><strong>Text Align V:</strong> ${css.textAlignVertical}</div>
+                <div class="info-item"><strong>Text Decoration:</strong> ${css.textDecoration}</div>
+                <div class="info-item"><strong>Text Case:</strong> ${css.textCase}</div>
+                <div class="info-item"><strong>Opacity:</strong> ${Math.round(css.opacity * 100)}%</div>
+                <div class="info-item"><strong>Blend Mode:</strong> ${css.blendMode}</div>
+              </div>
+            </details>
+          </div>
+        `;
+      }
+
+      return html;
+    }
+
+    function toggleCSSProperties() {
+      const cssSection = document.getElementById('css-properties');
+      const button = document.getElementById('show-css-btn');
+      
+      if (cssSection) {
+        cssPropertiesVisible = !cssPropertiesVisible;
+        
+        if (cssPropertiesVisible) {
+          cssSection.style.display = 'block';
+          button.textContent = 'Hide CSS Properties';
+        } else {
+          cssSection.style.display = 'none';
+          button.textContent = 'Show CSS Properties';
+        }
+      }
+    }
+
+    function updateControls(data) {
+      const controls = document.getElementById('controls');
+      const cssButton = document.getElementById('show-css-btn');
+      
+      if (data && data.type === "TEXT" && data.cssProperties) {
+        // Show controls for TEXT elements
+        controls.style.display = 'block';
+        cssButton.disabled = false;
+        cssButton.textContent = 'Show CSS Properties';
+        cssPropertiesVisible = false; // Reset state
+      } else if (data) {
+        // Show controls but disable CSS button for non-TEXT elements
+        controls.style.display = 'block';
+        cssButton.disabled = true;
+        cssButton.textContent = 'No CSS Properties (Not Text)';
+      } else {
+        // Hide controls when no selection
+        controls.style.display = 'none';
+      }
+    }
+
+    function sendMessage() {
+        parent.postMessage({ 
+            pluginMessage: { 
+                message: `Message from UI: element selected has ID ${currentElementData.id}`
+            } 
+        }, '*');
+    }
+
+    onmessage = (event) => {
+      const data = event.data.pluginMessage;
+      const infoDiv = document.getElementById('selection-info');
+      
+      // Store current element data
+      currentElementData = data;
+      
+      if (!data || data.message === "No selection") {
+        infoDiv.innerHTML = '<p>No element selected</p>';
+        updateControls(null);
+      } else {
+        infoDiv.innerHTML = createElementTemplate(data);
+        updateControls(data);
+        
+        // Hide CSS properties by default when new element is selected
+        const cssSection = document.getElementById('css-properties');
+        if (cssSection) {
+          cssSection.style.display = 'none';
+          cssPropertiesVisible = false;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
